@@ -5,6 +5,7 @@ from urllib.parse import urljoin
 
 def crawl_urls(url, max_depth=2):
     visited_urls = set()
+    found_urls = set()
 
     def crawl(url, depth):
         if depth > max_depth or url in visited_urls:
@@ -19,10 +20,12 @@ def crawl_urls(url, max_depth=2):
             return
 
         soup = BeautifulSoup(response.text, 'html.parser')
-        print(f"Found URL: {url}")
 
         for link in soup.find_all('a', href=True):
             next_url = urljoin(url, link['href'])
+            if next_url not in found_urls:
+                found_urls.add(next_url)
+                print(f"Found URL: {next_url}")
             crawl(next_url, depth + 1)
 
     crawl(url, 0)
@@ -45,9 +48,10 @@ def crawl_emails(url, max_depth=2):
 
         soup = BeautifulSoup(response.text, 'html.parser')
         emails = set(re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", soup.text))
-        emails_found.update(emails)
+        new_emails = emails - emails_found  # Subtract already found emails
+        emails_found.update(new_emails)
 
-        for email in emails:
+        for email in new_emails:
             print(f"Found Email: {email}")
 
         for link in soup.find_all('a', href=True):
@@ -74,9 +78,10 @@ def crawl_phone_numbers(url, max_depth=2):
 
         soup = BeautifulSoup(response.text, 'html.parser')
         phones = set(re.findall(r"\+?\d[\d -]{8,}\d", soup.text))
-        phones_found.update(phones)
+        new_phones = phones - phones_found  # Subtract already found phones
+        phones_found.update(new_phones)
 
-        for phone in phones:
+        for phone in new_phones:
             print(f"Found Phone Number: {phone}")
 
         for link in soup.find_all('a', href=True):
